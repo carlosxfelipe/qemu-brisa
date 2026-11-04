@@ -27,6 +27,7 @@ Inspirada no modelo arquitetural de `brisa/examples/main.go`, com bindings REPR 
 ### 1. Pré-requisitos
 
 Certifique-se de ter o QEMU instalado via Homebrew:
+
 ```bash
 brew install qemu
 ```
@@ -34,48 +35,57 @@ brew install qemu
 ### 2. Rodar a aplicação
 
 Para iniciar diretamente com o Go:
+
 ```bash
 go run main.go
 ```
 
 Ou compilar o binário standalone:
+
 ```bash
 go build -o qemu-brisa .
 ./qemu-brisa
 ```
 
-### 3. Atualizar o framework Brisa
+### 3. Gerar Pacote Instalável / App Nativo
+
+- **No macOS (Gera o bundle `QEMU Brisa.app` com ícone e metadados)**:
+
+  ```bash
+  go run build_mac.go
+  open "QEMU Brisa.app"
+  ```
+
+- **No Linux (Gera o executável standalone `.AppImage`)**:
+  ```bash
+  go run build_linux.go
+  ```
+
+### 4. Atualizar o framework Brisa
 
 Para atualizar o Brisa diretamente para o último commit da branch `main` no GitHub:
+
 ```bash
 ./update-brisa.sh
 ```
 
 Ou para alternar para a pasta local de desenvolvimento (`../brisa`):
+
 ```bash
 ./update-brisa.sh --local
 ```
 
 Para depuração ou testes sem abrir janela gráfica:
+
 ```bash
 BRISA_HEADLESS=1 ./qemu-brisa
 ```
+
 (Acesse a URL impressa no terminal ou o inspetor em `/brisa/inspector`)
 
 ---
 
-## 📂 Estrutura do Projeto
+## 📄 Licença
 
-```
-qemu-brisa/
-├── main.go            # Ponto de entrada, configuração do Brisa e registro de RPCs
-├── vm/
-│   ├── types.go       # DTOs, configurações de hardware e esquemas de validação
-│   └── manager.go     # Gerenciamento de processos QEMU, detecção de binários e qemu-img
-├── ui/
-│   └── index.html     # Interface do usuário Libadwaita / macOS com integração Brisa SDK
-├── assets/
-│   └── icon.png       # Ícone do aplicativo
-├── go.mod             # Módulo Go
-└── README.md
-```
+Este projeto está sob a licença [MIT](LICENSE). Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
