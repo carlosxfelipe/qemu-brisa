@@ -697,8 +697,19 @@
     }
 
     // Hardware Slider Handlers
+    function updateSliderProgress(input) {
+      if (!input) return;
+      const min = parseFloat(input.min) || 0;
+      const max = parseFloat(input.max) || 100;
+      const val = parseFloat(input.value) || 0;
+      const pct = max > min ? Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100)) : 0;
+      input.style.setProperty("--range-progress", pct + "%");
+    }
+
     function onCoresSlider(val) {
       val = parseInt(val, 10) || 1;
+      const slider = document.getElementById("vm-cores");
+      updateSliderProgress(slider);
       document.getElementById("cores-badge").textContent = val + (val === 1 ? " Core" : " Cores");
       document.getElementById("cpu-sub-label").textContent = "Alocado: " + val + (val === 1 ? " Core" : " Cores");
       [1, 2, 4, 8].forEach(c => {
@@ -715,6 +726,8 @@
 
     function onRAMSlider(val) {
       const mb = parseInt(val, 10);
+      const slider = document.getElementById("vm-ram");
+      updateSliderProgress(slider);
       const gb = (mb / 1024).toFixed(1);
       document.getElementById("ram-badge").textContent = mb + " MB";
       document.getElementById("ram-sub-label").textContent = "Alocado: " + mb + " MB (" + gb + " GB)";
@@ -734,6 +747,7 @@
     }
 
     function onDiskSizeSlider(val) {
+      updateSliderProgress(document.getElementById("vm-disk-size"));
       document.getElementById("disk-size-label").textContent = val + " GB (alocação dinâmica QCOW2)";
       updateCmdPreview();
     }
@@ -1164,6 +1178,10 @@
         const ramSlider = document.getElementById("vm-ram");
         ramSlider.max = Math.min(info.hostMemoryMB, 32768);
         document.getElementById("max-ram-label").textContent = `${ramSlider.max} MB`;
+
+        updateSliderProgress(coresSlider);
+        updateSliderProgress(ramSlider);
+        updateSliderProgress(document.getElementById("vm-disk-size"));
 
         // System Diagnostic page
         document.getElementById("sys-qemu-version").textContent = info.qemuVersion || "Detectado";
