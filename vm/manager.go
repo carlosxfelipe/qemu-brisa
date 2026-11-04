@@ -120,9 +120,10 @@ func (m *Manager) GetSystemInfo() SystemInfo {
 	}
 
 	accels := []string{"tcg"}
-	if runtime.GOOS == "darwin" {
+	switch runtime.GOOS {
+	case "darwin":
 		accels = append(accels, "hvf")
-	} else if runtime.GOOS == "linux" {
+	case "linux":
 		accels = append(accels, "kvm")
 	}
 
