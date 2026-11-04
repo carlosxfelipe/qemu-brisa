@@ -347,6 +347,26 @@
       outline: none;
       cursor: pointer;
     }
+
+    .adw-page {
+      padding: 20px 24px 60px;
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    /* 2-Column Responsive Grid for Compact Hardware Settings */
+    .hardware-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 920px) {
+      .hardware-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -534,63 +554,52 @@
             </div>
           </div>
 
-          <!-- CPU Cores and RAM Hardware Allocation -->
-          <div class="adw-group">
-            <div class="adw-group-header">
-              <div>
-                <div class="adw-group-title">Recursos de Hardware (CPU & RAM)</div>
-                <div class="adw-group-desc">Ajuste os núcleos de processamento e a quantidade de memória RAM</div>
+          <!-- CPU Cores and RAM Hardware Allocation in 2 Columns -->
+          <div class="hardware-grid">
+            <!-- CPU Cores Card -->
+            <div class="adw-group">
+              <div class="adw-group-header">
+                <div>
+                  <div class="adw-group-title">Processador (CPU)</div>
+                  <div class="adw-group-desc" id="cpu-sub-label">Alocado: 2 Cores</div>
+                </div>
               </div>
-            </div>
 
-            <div class="boxed-list">
-              <!-- CPU Cores Slider -->
-              <div class="adw-row">
-                <div class="adw-row-prefix">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
-                    <line x1="9" y1="9" x2="15" y2="15"/>
-                    <line x1="15" y1="9" x2="9" y2="15"/>
-                  </svg>
-                </div>
-                <div class="adw-row-text">
-                  <div class="adw-row-title">Núcleos de CPU (Cores)</div>
-                  <div class="adw-row-subtitle" id="cpu-sub-label">Alocado: 2 Cores</div>
-                </div>
-                <div class="adw-row-suffix" style="width: 260px; display: flex; flex-direction: column; gap: 4px;">
-                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--dim-label-color);">
+              <div class="boxed-list">
+                <div class="adw-row" style="flex-direction: column; align-items: stretch; gap: 8px; padding: 14px 16px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--dim-label-color);">
                     <span>1 Core</span>
-                    <b id="cores-badge" style="color: var(--accent-color);">2 Cores</b>
+                    <b id="cores-badge" style="color: var(--accent-color); font-size: 13px;">2 Cores</b>
                     <span id="max-cores-label">8 Cores</span>
                   </div>
                   <input type="range" id="vm-cores" min="1" max="8" value="2" oninput="onCoresSlider(this.value)" />
                 </div>
               </div>
+            </div>
 
-              <!-- RAM Memory Slider -->
-              <div class="adw-row">
-                <div class="adw-row-prefix">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M6 19v-3"/><path d="M10 19v-3"/><path d="M14 19v-3"/><path d="M18 19v-3"/><rect x="2" y="5" width="20" height="10" rx="2"/>
-                  </svg>
+            <!-- RAM Memory Card -->
+            <div class="adw-group">
+              <div class="adw-group-header">
+                <div>
+                  <div class="adw-group-title">Memória RAM</div>
+                  <div class="adw-group-desc" id="ram-sub-label">Alocado: 2048 MB (2.0 GB)</div>
                 </div>
-                <div class="adw-row-text">
-                  <div class="adw-row-title">Memória RAM</div>
-                  <div class="adw-row-subtitle" id="ram-sub-label">Alocado: 2048 MB (2.0 GB)</div>
+              </div>
+
+              <div class="boxed-list">
+                <div class="adw-row" style="flex-direction: column; align-items: stretch; gap: 8px; padding: 14px 16px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--dim-label-color);">
+                    <span>512 MB</span>
+                    <b id="ram-badge" style="color: var(--accent-color); font-size: 13px;">2048 MB</b>
+                    <span id="max-ram-label">8192 MB</span>
+                  </div>
+                  <input type="range" id="vm-ram" min="512" max="8192" step="256" value="2048" oninput="onRAMSlider(this.value)" />
                   <div class="preset-chips">
                     <button type="button" class="chip-btn" onclick="setRAMPreset(1024)">1 GB</button>
                     <button type="button" class="chip-btn active" id="chip-2048" onclick="setRAMPreset(2048)">2 GB</button>
                     <button type="button" class="chip-btn" id="chip-4096" onclick="setRAMPreset(4096)">4 GB</button>
                     <button type="button" class="chip-btn" id="chip-8192" onclick="setRAMPreset(8192)">8 GB</button>
                   </div>
-                </div>
-                <div class="adw-row-suffix" style="width: 260px; display: flex; flex-direction: column; gap: 4px;">
-                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--dim-label-color);">
-                    <span>512 MB</span>
-                    <b id="ram-badge" style="color: var(--accent-color);">2048 MB</b>
-                    <span id="max-ram-label">8192 MB</span>
-                  </div>
-                  <input type="range" id="vm-ram" min="512" max="8192" step="256" value="2048" oninput="onRAMSlider(this.value)" />
                 </div>
               </div>
             </div>

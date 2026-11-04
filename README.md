@@ -44,6 +44,18 @@ go build -o qemu-brisa .
 ./qemu-brisa
 ```
 
+### 3. Atualizar o framework Brisa
+
+Para atualizar o Brisa diretamente para o último commit da branch `main` no GitHub:
+```bash
+./update-brisa.sh
+```
+
+Ou para alternar para a pasta local de desenvolvimento (`../brisa`):
+```bash
+./update-brisa.sh --local
+```
+
 Para depuração ou testes sem abrir janela gráfica:
 ```bash
 BRISA_HEADLESS=1 ./qemu-brisa

@@ -13,7 +13,7 @@ import (
 	"qemu-brisa/vm"
 )
 
-//go:embed ui assets/icon.png
+//go:embed all:ui assets/icon.png
 var uiAssets embed.FS
 
 type SystemService struct {
