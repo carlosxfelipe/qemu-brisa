@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="pt-BR" translate="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="google" content="notranslate" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QEMU Brisa</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+    }
+
+    .adw-sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.2px;
+    }
+
+    .adw-sidebar-brand svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .adw-nav-row svg {
+      width: 17px;
+      height: 17px;
+      opacity: 0.85;
+      flex-shrink: 0;
+    }
+
+    .adw-nav-badge {
+      margin-left: auto;
+      background-color: var(--button-bg);
+      color: var(--dim-label-color);
+      font-size: 11.5px;
+      font-weight: 700;
+      height: 20px;
+      min-width: 22px;
+      padding: 0 7px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+    }
+
+    .adw-sidebar-footer {
+      padding: 12px 14px;
+      border-top: 1px solid var(--row-divider-color);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 11.5px;
+      color: var(--dim-label-color);
+    }
+
+    .adw-sidebar-footer .footer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .adw-toolbar-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+
+    .adw-toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .adw-group-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: 0 4px;
+      margin-bottom: 8px;
+    }
+
+    .adw-row-prefix {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background-color: var(--button-bg);
+      color: var(--window-fg-color);
+      flex-shrink: 0;
+    }
+
+    .adw-entry-input {
+      width: 100%;
+      padding: 6px 0;
+      user-select: text;
+      -webkit-user-select: text;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--window-fg-color);
+      font-size: 13.5px;
+    }
+
+    .adw-entry-input::placeholder {
+      color: var(--dim-label-color);
+    }
+
+    .gtk-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      height: 24px;
+      padding: 0 10px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 600;
+      line-height: 1;
+      background-color: var(--button-bg);
+      color: var(--window-fg-color);
+    }
+
+    .gtk-pill.running {
+      background-color: var(--success-bg-color, rgba(48, 209, 88, 0.18));
+      color: var(--success-color, #30d158);
+    }
+
+    .gtk-pill.stopped {
+      background-color: var(--button-bg);
+      color: var(--dim-label-color);
+    }
+
+    .gtk-pill.error {
+      background-color: var(--destructive-bg-color, rgba(255, 69, 58, 0.18));
+      color: var(--destructive-color, #ff453a);
+    }
+
+    .gtk-pill.accent {
+      background-color: var(--accent-subtle-bg, rgba(10, 132, 255, 0.18));
+      color: var(--accent-color, #0a84ff);
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: currentColor;
+      box-shadow: 0 0 8px currentColor;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.4; }
+      50% { opacity: 1; }
+      100% { opacity: 0.4; }
+    }
+
+    .adw-empty-row {
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--dim-label-color);
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .adw-toast-overlay {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background-color: var(--toast-bg, rgba(28, 28, 30, 0.95));
+      color: #ffffff;
+      height: 38px;
+      padding: 0 20px;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      font-size: 13.5px;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 150ms ease, transform 150ms ease;
+      z-index: 1000;
+    }
+
+    .adw-toast-overlay.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Terminal Preview Box */
+    .cmd-preview {
+      background-color: #0d1117;
+      color: #7ee787;
+      font-family: "SF Mono", "Menlo", "Consolas", monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      word-break: break-all;
+      user-select: text;
+      -webkit-user-select: text;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .log-terminal {
+      background-color: #0b0d10;
+      color: #e6edf3;
+      font-family: "SF Mono", "Menlo", "Consolas", monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      height: 480px;
+      overflow-y: auto;
+      user-select: text;
+      -webkit-user-select: text;
+      white-space: pre-wrap;
+    }
+
+    /* Quick Preset Chips */
+    .preset-chips {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .chip-btn {
+      background: var(--button-bg);
+      border: 1px solid transparent;
+      color: var(--window-fg-color);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 120ms ease;
+    }
+
+    .chip-btn:hover {
+      background: var(--button-hover-bg);
+    }
+
+    .chip-btn.active {
+      background: var(--accent-bg-color);
+      color: var(--accent-fg-color);
+    }
+
+    /* Range slider custom styling */
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--button-bg);
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent-color, #0a84ff);
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+      border: 2px solid #ffffff;
+    }
+
+    .vm-card {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px;
+      background: var(--card-bg-color);
+      border: 1px solid var(--card-border-color);
+      border-radius: var(--card-radius);
+      transition: background 140ms ease;
+    }
+
+    .vm-card:hover {
+      background: var(--card-hover-bg);
+    }
+
+    .vm-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .vm-card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--window-fg-color);
+    }
+
+    .vm-card-details {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--dim-label-color);
+    }
+
+    .vm-card-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--row-divider-color);
+      padding-top: 12px;
+      margin-top: 4px;
+    }
+
+    .select-styled {
+      background: var(--button-bg);
+      color: var(--window-fg-color);
+      border: 1px solid var(--card-border-color);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="adw-split-view">
+    <!-- Left Navigation Sidebar -->
+    <aside class="adw-sidebar">
+      <div class="adw-sidebar-header">
+        <div class="adw-sidebar-brand">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-color)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+            <path d="M7 8h10M7 12h5"/>
+          </svg>
+          <span>QEMU Brisa</span>
+        </div>
+      </div>
+
+      <nav class="adw-nav-list">
+        <div class="adw-nav-row active" id="nav-vms" onclick="switchPage('vms')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+            <line x1="6" y1="6" x2="6.01" y2="6"/>
+            <line x1="6" y1="18" x2="6.01" y2="18"/>
+          </svg>
+          <span>Minhas Máquinas</span>
+          <span class="adw-nav-badge" id="vms-count">0</span>
+        </div>
+
+        <div class="adw-nav-row" id="nav-new-vm" onclick="switchPage('new-vm')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="16"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+          <span>Nova Máquina / Início</span>
+        </div>
+
+        <div class="adw-nav-row" id="nav-logs" onclick="switchPage('logs')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 17 10 11 4 5"/>
+            <line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+          <span>Console & Logs</span>
+        </div>
+
+        <div class="adw-nav-row" id="nav-system" onclick="switchPage('system')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
+            <rect x="9" y="9" width="6" height="6"/>
+            <line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/>
+            <line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/>
+            <line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/>
+            <line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>
+          </svg>
+          <span>Status do QEMU</span>
+        </div>
+      </nav>
+
+      <div class="adw-sidebar-footer">
+        <div class="footer-row">
+          <span>Host:</span>
+          <b id="host-arch-label">macOS (arm64)</b>
+        </div>
+        <div class="footer-row">
+          <span>Memória Host:</span>
+          <span id="host-ram-label">8 GB</span>
+        </div>
+        <div class="footer-row">
+          <span>QEMU:</span>
+          <span id="qemu-status-pill" style="color: var(--success-color);">Detectado</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Content Pane -->
+    <section class="adw-content-view">
+      <header class="adw-toolbar">
+        <div>
+          <div class="adw-toolbar-title" id="page-title">Minhas Máquinas Virtuais</div>
+        </div>
+        <div class="adw-toolbar-actions">
+          <button class="gtk-btn" title="Atualizar lista" onclick="loadAllVMs()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+          </button>
+          <button class="gtk-btn suggested-action" onclick="switchPage('new-vm')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Nova VM
+          </button>
+        </div>
+      </header>
+
+      <main class="adw-page-container">
+        <!-- 1. PAGE: VMS LIST -->
+        <div id="page-vms" class="adw-page">
+          <div id="vms-container" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- 2. PAGE: NEW / EDIT VM & QUICK BOOT -->
+        <div id="page-new-vm" class="adw-page hidden">
+          <!-- VM Identity & Architecture -->
+          <div class="adw-group">
+            <div class="adw-group-header">
+              <div>
+                <div class="adw-group-title">Configuração da Máquina Virtual</div>
+                <div class="adw-group-desc">Defina o nome, imagem ISO e recursos de hardware</div>
+              </div>
+            </div>
+
+            <div class="boxed-list">
+              <!-- Name -->
+              <div class="adw-row">
+                <div class="adw-row-prefix">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                  </svg>
+                </div>
+                <div class="adw-row-text">
+                  <div class="adw-row-title">Nome da Máquina</div>
+                  <input type="text" id="vm-name" class="adw-entry-input" placeholder="ex: Ubuntu 24.04 LTS" oninput="updateCmdPreview()" />
+                </div>
+              </div>
+
+              <!-- Architecture -->
+              <div class="adw-row">
+                <div class="adw-row-prefix">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
+                    <rect x="9" y="9" width="6" height="6"/>
+                  </svg>
+                </div>
+                <div class="adw-row-text">
+                  <div class="adw-row-title">Arquitetura de CPU</div>
+                  <div class="adw-row-subtitle" id="arch-accel-hint">aarch64 utiliza aceleração HVF nativa no Apple Silicon</div>
+                </div>
+                <div class="adw-row-suffix">
+                  <select id="vm-arch" class="select-styled" onchange="onArchChange()">
+                    <option value="aarch64">aarch64 (ARM64 — Apple Silicon)</option>
+                    <option value="x86_64">x86_64 (Intel / AMD 64-bit)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ISO Media Selection -->
+          <div class="adw-group">
+            <div class="adw-group-header">
+              <div>
+                <div class="adw-group-title">Mídia de Inicialização (ISO)</div>
+                <div class="adw-group-desc">Selecione o arquivo de instalação ou sistema operacional (.iso, .img)</div>
+              </div>
+            </div>
+
+            <div class="boxed-list">
+              <div class="adw-row">
+                <div class="adw-row-prefix">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+                  </svg>
+                </div>
+                <div class="adw-row-text">
+                  <div class="adw-row-title">Imagem ISO</div>
+                  <input type="text" id="vm-iso" class="adw-entry-input" placeholder="/Users/.../caminho/para/sistema.iso" oninput="updateCmdPreview()" />
+                </div>
+                <div class="adw-row-suffix" style="gap: 8px;">
+                  <button type="button" class="gtk-btn suggested-action" onclick="chooseISO()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    Selecionar ISO...
+                  </button>
+                  <button type="button" class="gtk-btn" title="Limpar ISO" onclick="clearISO()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CPU Cores and RAM Hardware Allocation -->
+          <div class="adw-group">
+            <div class="adw-group-header">
+              <div>
+                <div class="adw-group-title">Recursos de Hardware (CPU & RAM)</div>
+                <div class="adw-group-desc">Ajuste os núcleos de processamento e a quantidade de memória RAM</div>
+              </div>
+            </div>
+
+            <div class="boxed-list">
+              <!-- CPU Cores Slider -->
+              <div class="adw-row">
+                <div class="adw-row-prefix">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                  </svg>
+                </div>
+                <div class="adw-row-text">
+                  <div class="adw-row-title">Núcleos de CPU (Cores)</div>
+                  <div class="adw-row-subtitle" id="cpu-sub-label">Alocado: 2 Cores</div>
+                </div>
+                <div class="adw-row-suffix" style="width: 260px; display: flex; flex-direction: column; gap: 4px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--dim-label-color);">
+                    <span>1 Core</span>
+                    <b id="cores-badge" style="color: var(--accent-color);">2 Cores</b>
+                    <span id="max-cores-label">8 Cores</span>
+                  </div>
+                  <input type="range" id="vm-cores" min="1" max="8" value="2" oninput="onCoresSlider(this.value)" />
+                </div>
+              </div>
+
+              <!-- RAM Memory Slider -->
+              <div class="adw-row">
+                <div class="adw-row-prefix">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 19v-3"/><path d="M10 19v-3"/><path d="M14 19v-3"/><path d="M18 19v-3"/><rect x="2" y="5" width="20" height="10" rx="2"/>
+                  </svg>
+                </div>
+                <div class="adw-row-text">
+                  <div class="adw-row-title">Memória RAM</div>
+                  <div class="adw-row-subtitle" id="ram-sub-label">Alocado: 2048 MB (2.0 GB)</div>
+                  <div class="preset-chips">
+                    <button type="button" class="chip-btn" onclick="setRAMPreset(1024)">1 GB</button>
+                    <button type="button" class="chip-btn active" id="chip-2048" onclick="setRAMPreset(2048)">2 GB</button>
+                    <button type="button" class="chip-btn" id="chip-4096" onclick="setRAMPreset(4096)">4 GB</button>
+                    <button type="button" class="chip-btn" id="chip-8192" onclick="setRAMPreset(8192)">8 GB</button>
+                  </div>
+                </div>
+                <div class="adw-row-suffix" style="width: 260px; display: flex; flex-direction: column; gap: 4px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--dim-label-color);">
+                    <span>512 MB</span>
+                    <b id="ram-badge" style="color: var(--accent-color);">2048 MB</b>
+                    <span id="max-ram-label">8192 MB</span>
+                  </div>
+                  <input type="range" id="vm-ram" min="512" max="8192" step="256" value="2048" oninput="onRAMSlider(this.value)" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Storage / Virtual Disk -->
+          <div class="adw-group">
+            <div class="adw-group-header">
+              <div>
+                <div class="adw-group-title">Disco Rígido Virtual (Opcional)</div>
+                <div class="adw-group-desc">Crie um disco .qcow2 para instalar o sistema ou use apenas a ISO como Live CD</div>
+              </div>
+            </div>
+
+            <div class="boxed-list">
+              <div class="adw-row">
+                <div class="adw-row-text">
+                  <div class="adw-row-title">Criar Disco Rígido Virtual Automático</div>
+                  <div class="adw-row-subtitle">Cria automaticamente um arquivo .qcow2 na pasta ~/.qemu-brisa/disks</div>
+                </div>
+                <div class="adw-row-suffix">
+                  <input type="checkbox" id="vm-create-disk" checked onchange="toggleDiskOptions()" />
+                </div>
+              </div>
+
+              <div class="adw-row" id="disk-size-row">
+                <div class="adw-row-text">
+                  <div class="adw-row-title">Tamanho do Disco</div>
+                  <div class="adw-row-subtitle" id="disk-size-label">20 GB (alocação dinâmica QCOW2)</div>
+                </div>
+                <div class="adw-row-suffix" style="width: 200px;">
+                  <input type="range" id="vm-disk-size" min="5" max="120" step="5" value="20" oninput="onDiskSizeSlider(this.value)" />
+                </div>
+              </div>
+
+              <div class="adw-row">
+                <div class="adw-row-text">
+                  <div class="adw-row-title">Ou Usar Disco Existente (.qcow2 / .img)</div>
+                  <input type="text" id="vm-disk-path" class="adw-entry-input" placeholder="Opcional: caminho de disco já existente" oninput="updateCmdPreview()" />
+                </div>
+                <div class="adw-row-suffix">
+                  <button type="button" class="gtk-btn" onclick="chooseExistingDisk()">Procurar Disco...</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- QEMU Command Line Live Preview -->
+          <div class="adw-group">
+            <div class="adw-group-header">
+              <div>
+                <div class="adw-group-title">Comando QEMU Gerado</div>
+                <div class="adw-group-desc">Linha de comando que será executada nativamente pelo processo</div>
+              </div>
+              <button class="gtk-btn flat" type="button" onclick="copyCommand()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                Copiar Comando
+              </button>
+            </div>
+
+            <div class="cmd-preview" id="cmd-preview-box">
+              qemu-system-aarch64 -m 2048M -smp 2 -M virt,highmem=on -accel hvf -cpu host -display cocoa
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div style="display: flex; gap: 12px; margin-top: 24px; padding-bottom: 30px;">
+            <button type="button" class="gtk-btn suggested-action" style="padding: 10px 22px; font-size: 14px;" onclick="startVMFromForm()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              Iniciar Imediatamente (Quick Launch)
+            </button>
+
+            <button type="button" class="gtk-btn" style="padding: 10px 20px; font-size: 14px;" onclick="saveVMFromForm()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+              Salvar Máquina
+            </button>
+
+            <button type="button" class="gtk-btn" style="margin-left: auto;" onclick="resetForm()">
+              Limpar Campos
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. PAGE: CONSOLE & LOGS -->
+        <div id="page-logs" class="adw-page hidden">
+          <div class="adw-group">
+            <div class="adw-group-header">
+              <div>
+                <div class="adw-group-title">Terminal & Logs de Execução</div>
+                <div class="adw-group-desc">Acompanhe a saída de inicialização e mensagens do QEMU</div>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <select id="log-vm-select" class="select-styled" onchange="switchLogVM()">
+                  <option value="">Selecione uma máquina...</option>
+                </select>
+                <button class="gtk-btn flat" onclick="clearCurrentLogs()">Limpar</button>
+                <button class="gtk-btn flat" onclick="copyCurrentLogs()">Copiar</button>
+              </div>
+            </div>
+
+            <div class="log-terminal" id="terminal-content">
+[QEMU Brisa] Aguardando inicialização de máquinas virtuais...
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. PAGE: SYSTEM & QEMU STATUS -->
+        <div id="page-system" class="adw-page hidden">
+          <div class="adw-group">
+            <div class="adw-group-header">
+              <div>
+                <div class="adw-group-title">Diagnóstico do QEMU & Homebrew</div>
+                <div class="adw-group-desc">Binários detectados no sistema e recursos disponíveis</div>
+              </div>
+            </div>
+
+            <div class="boxed-list">
+              <div class="adw-row">
+                <div class="adw-row-text">
+                  <div class="adw-row-title">Versão do QEMU</div>
+                  <div class="adw-row-subtitle" id="sys-qemu-version">Detectando...</div>
+                </div>
+                <div class="adw-row-suffix">
+                  <span class="gtk-pill accent" id="sys-version-pill">v11.1.3</span>
+                </div>
+              </div>
+
+              <div class="adw-row">
+                <div class="adw-row-text">
+                  <div class="adw-row-title">Executável ARM64 (aarch64)</div>
+                  <div class="adw-row-subtitle" id="sys-arm-path">/opt/homebrew/bin/qemu-system-aarch64</div>
+                </div>
+                <div class="adw-row-suffix">
+                  <span class="gtk-pill running">Instalado</span>
+                </div>
+              </div>
+
+              <div class="adw-row">
+                <div class="adw-row-text">
+                  <div class="adw-row-title">Executável x86_64</div>
+                  <div class="adw-row-subtitle" id="sys-x86-path">/opt/homebrew/bin/qemu-system-x86_64</div>
+                </div>
+                <div class="adw-row-suffix">
+                  <span class="gtk-pill running">Instalado</span>
+                </div>
+              </div>
+
+              <div class="adw-row">
+                <div class="adw-row-text">
+                  <div class="adw-row-title">Criador de Discos (qemu-img)</div>
+                  <div class="adw-row-subtitle" id="sys-img-path">/opt/homebrew/bin/qemu-img</div>
+                </div>
+                <div class="adw-row-suffix">
+                  <span class="gtk-pill running">Instalado</span>
+                </div>
+              </div>
+
+              <div class="adw-row">
+                <div class="adw-row-text">
+                  <div class="adw-row-title">Firmware UEFI ARM64 (EDK2 OVMF)</div>
+                  <div class="adw-row-subtitle" id="sys-edk2-path">/opt/homebrew/share/qemu/edk2-aarch64-code.fd</div>
+                </div>
+                <div class="adw-row-suffix">
+                  <span class="gtk-pill running" id="sys-edk2-pill">Pronto</span>
+                </div>
+              </div>
+
+              <div class="adw-row">
+                <div class="adw-row-text">
+                  <div class="adw-row-title">Diretório de Armazenamento de Discos</div>
+                  <div class="adw-row-subtitle" id="sys-disks-dir">~/.qemu-brisa/disks</div>
+                </div>
+                <div class="adw-row-suffix">
+                  <button class="gtk-btn" onclick="openDisksFolder()">Abrir Pasta</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </section>
+  </div>
+
+  <!-- Toast Notification Overlay -->
+  <div id="adw-toast" class="adw-toast-overlay"></div>
+
+  <script>
+    let currentEditingId = "";
+    let systemInfo = null;
+    let savedVMs = [];
+    let vmStates = {};
+    let toastTimer = null;
+    let vmLogs = {};
+    let selectedLogVM = "";
+
+    function showToast(msg) {
+      const el = document.getElementById("adw-toast");
+      el.textContent = msg;
+      el.classList.add("visible");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove("visible"), 2800);
+    }
+
+    function switchPage(page) {
+      const titles = {
+        "vms": "Minhas Máquinas Virtuais",
+        "new-vm": currentEditingId ? "Editar Máquina Virtual" : "Nova Máquina / Início Rápido",
+        "logs": "Console & Logs",
+        "system": "Status do QEMU & Sistema"
+      };
+
+      document.getElementById("page-title").textContent = titles[page] || "QEMU Brisa";
+
+      ["vms", "new-vm", "logs", "system"].forEach(p => {
+        const pageEl = document.getElementById("page-" + p);
+        const navEl = document.getElementById("nav-" + p);
+        if (pageEl) pageEl.classList.toggle("hidden", p !== page);
+        if (navEl) navEl.classList.toggle("active", p === page);
+      });
+
+      if (page === "new-vm") {
+        updateCmdPreview();
+      }
+    }
+
+    // Hardware Slider Handlers
+    function onCoresSlider(val) {
+      document.getElementById("cores-badge").textContent = val + (val === "1" ? " Core" : " Cores");
+      document.getElementById("cpu-sub-label").textContent = "Alocado: " + val + (val === "1" ? " Core" : " Cores");
+      updateCmdPreview();
+    }
+
+    function onRAMSlider(val) {
+      const mb = parseInt(val, 10);
+      const gb = (mb / 1024).toFixed(1);
+      document.getElementById("ram-badge").textContent = mb + " MB";
+      document.getElementById("ram-sub-label").textContent = "Alocado: " + mb + " MB (" + gb + " GB)";
+
+      // Update preset chips
+      [1024, 2048, 4096, 8192].forEach(p => {
+        const chip = document.getElementById("chip-" + p);
+        if (chip) chip.classList.toggle("active", mb === p);
+      });
+
+      updateCmdPreview();
+    }
+
+    function setRAMPreset(mb) {
+      document.getElementById("vm-ram").value = mb;
+      onRAMSlider(mb);
+    }
+
+    function onDiskSizeSlider(val) {
+      document.getElementById("disk-size-label").textContent = val + " GB (alocação dinâmica QCOW2)";
+      updateCmdPreview();
+    }
+
+    function toggleDiskOptions() {
+      const checked = document.getElementById("vm-create-disk").checked;
+      document.getElementById("disk-size-row").style.display = checked ? "flex" : "none";
+      updateCmdPreview();
+    }
+
+    function onArchChange() {
+      const arch = document.getElementById("vm-arch").value;
+      const hint = document.getElementById("arch-accel-hint");
+      if (arch === "aarch64") {
+        hint.textContent = "aarch64 utiliza aceleração nativa Apple Silicon HVF";
+      } else {
+        hint.textContent = "x86_64 utiliza emulação rápida TCG";
+      }
+      updateCmdPreview();
+    }
+
+    // File Dialogs
+    async function chooseISO() {
+      try {
+        let res = null;
+        if (window.brisa && brisa.call && brisa.call.system && brisa.call.system.browseISO) {
+          res = await brisa.call.system.browseISO();
+        } else if (window.brisa && brisa.dialog && brisa.dialog.openFile) {
+          const file = await brisa.dialog.openFile({
+            title: "Selecionar Imagem ISO",
+            filters: [{ name: "ISO / Boot", patterns: ["*.iso", "*.img", "*.dmg", "*.raw"] }]
+          });
+          res = { path: file };
+        }
+
+        if (res && res.path) {
+          document.getElementById("vm-iso").value = res.path;
+          if (!document.getElementById("vm-name").value) {
+            const fileName = res.path.split("/").pop().replace(/\.[^/.]+$/, "");
+            document.getElementById("vm-name").value = fileName.replace(/[-_]/g, " ");
+          }
+          showToast("ISO selecionada: " + res.path.split("/").pop());
+          updateCmdPreview();
+        }
+      } catch (err) {
+        showToast("Erro ao abrir seletor: " + err.message);
+      }
+    }
+
+    function clearISO() {
+      document.getElementById("vm-iso").value = "";
+      updateCmdPreview();
+    }
+
+    async function chooseExistingDisk() {
+      try {
+        let res = null;
+        if (window.brisa && brisa.call && brisa.call.system && brisa.call.system.browseDisk) {
+          res = await brisa.call.system.browseDisk();
+        } else if (window.brisa && brisa.dialog && brisa.dialog.openFile) {
+          const file = await brisa.dialog.openFile({
+            title: "Selecionar Disco Virtual",
+            filters: [{ name: "Discos Virtuais", patterns: ["*.qcow2", "*.img", "*.raw"] }]
+          });
+          res = { path: file };
+        }
+        if (res && res.path) {
+          document.getElementById("vm-disk-path").value = res.path;
+          document.getElementById("vm-create-disk").checked = false;
+          toggleDiskOptions();
+          showToast("Disco selecionado: " + res.path.split("/").pop());
+          updateCmdPreview();
+        }
+      } catch (err) {
+        showToast("Erro ao selecionar disco: " + err.message);
+      }
+    }
+
+    // Live Command Preview
+    async function updateCmdPreview() {
+      const cfg = getFormData();
+      try {
+        if (window.brisa && brisa.call && brisa.call.vms && brisa.call.vms.buildCommand) {
+          const res = await brisa.call.vms.buildCommand({ vm: cfg });
+          if (res && res.command) {
+            document.getElementById("cmd-preview-box").textContent = res.command;
+            return;
+          }
+        }
+      } catch (_) {}
+
+      // Fallback local preview
+      const arch = cfg.arch;
+      const bin = arch === "aarch64" ? "qemu-system-aarch64" : "qemu-system-x86_64";
+      let str = bin + " -m " + cfg.memoryMB + "M -smp " + cfg.cores;
+      if (arch === "aarch64") {
+        str += " -M virt,highmem=on -accel hvf -cpu host -display cocoa";
+      } else {
+        str += " -M q35 -accel tcg -cpu max -display cocoa -vga virtio -usb -device usb-tablet";
+      }
+      if (cfg.isoPath) {
+        str += ' -cdrom "' + cfg.isoPath + '" -boot d';
+      }
+      document.getElementById("cmd-preview-box").textContent = str;
+    }
+
+    function copyCommand() {
+      const text = document.getElementById("cmd-preview-box").textContent.trim();
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text);
+        showToast("Comando copiado para a área de transferência!");
+      } else if (window.brisa && brisa.clipboard) {
+        brisa.clipboard.writeText(text);
+        showToast("Comando copiado para a área de transferência!");
+      }
+    }
+
+    function getFormData() {
+      const name = document.getElementById("vm-name").value.trim() || "Máquina Virtual";
+      const arch = document.getElementById("vm-arch").value;
+      const isoPath = document.getElementById("vm-iso").value.trim();
+      const cores = parseInt(document.getElementById("vm-cores").value, 10) || 2;
+      const memoryMB = parseInt(document.getElementById("vm-ram").value, 10) || 2048;
+      const createDisk = document.getElementById("vm-create-disk").checked;
+      const diskSizeGB = parseInt(document.getElementById("vm-disk-size").value, 10) || 20;
+      const diskPath = document.getElementById("vm-disk-path").value.trim();
+
+      return {
+        id: currentEditingId || "",
+        name: name,
+        arch: arch,
+        cores: cores,
+        memoryMB: memoryMB,
+        isoPath: isoPath,
+        createDisk: createDisk,
+        diskSizeGB: diskSizeGB,
+        diskPath: diskPath,
+        enableAccel: true
+      };
+    }
+
+    function resetForm() {
+      currentEditingId = "";
+      document.getElementById("vm-name").value = "";
+      document.getElementById("vm-iso").value = "";
+      document.getElementById("vm-disk-path").value = "";
+      document.getElementById("vm-arch").value = (systemInfo && systemInfo.arch === "arm64") ? "aarch64" : "x86_64";
+      document.getElementById("vm-create-disk").checked = true;
+      toggleDiskOptions();
+      setRAMPreset(2048);
+      document.getElementById("vm-cores").value = 2;
+      onCoresSlider(2);
+      onArchChange();
+      updateCmdPreview();
+    }
+
+    // Save and Start
+    async function saveVMFromForm() {
+      const cfg = getFormData();
+      try {
+        await brisa.call.vms.save({ vm: cfg });
+        showToast("Máquina salva com sucesso!");
+        resetForm();
+        await loadAllVMs();
+        switchPage("vms");
+      } catch (err) {
+        showToast("Erro ao salvar VM: " + err.message);
+      }
+    }
+
+    async function startVMFromForm() {
+      const cfg = getFormData();
+      try {
+        showToast("Iniciando QEMU...");
+        await brisa.call.vms.start({ adHoc: cfg });
+        showToast("Máquina iniciada com sucesso!");
+        selectedLogVM = cfg.id;
+        await loadAllVMs();
+        switchPage("vms");
+      } catch (err) {
+        showToast("Erro ao iniciar QEMU: " + err.message);
+      }
+    }
+
+    async function startSavedVM(id) {
+      try {
+        showToast("Iniciando máquina...");
+        await brisa.call.vms.start({ id: id });
+        showToast("Máquina iniciada!");
+        selectedLogVM = id;
+        await loadAllVMs();
+      } catch (err) {
+        showToast("Falha ao iniciar: " + err.message);
+      }
+    }
+
+    async function stopVM(id) {
+      try {
+        await brisa.call.vms.stop({ id: id, force: false });
+        showToast("Máquina finalizada");
+        await loadAllVMs();
+      } catch (err) {
+        showToast("Erro ao parar VM: " + err.message);
+      }
+    }
+
+    async function deleteVM(id, name) {
+      const confirmed = await brisa.dialog.confirm(
+        "Excluir Máquina",
+        "Deseja realmente remover a configuração da máquina \"" + name + "\"?"
+      );
+      if (!confirmed) return;
+
+      try {
+        await brisa.call.vms.delete({ id: id, deleteDisk: false });
+        showToast("Máquina excluída");
+        await loadAllVMs();
+      } catch (err) {
+        showToast("Erro ao excluir: " + err.message);
+      }
+    }
+
+    function editVM(id) {
+      const vm = savedVMs.find(v => v.id === id);
+      if (!vm) return;
+
+      currentEditingId = vm.id;
+      document.getElementById("vm-name").value = vm.name || "";
+      document.getElementById("vm-arch").value = vm.arch || "aarch64";
+      document.getElementById("vm-iso").value = vm.isoPath || "";
+      document.getElementById("vm-disk-path").value = vm.diskPath || "";
+      document.getElementById("vm-cores").value = vm.cores || 2;
+      onCoresSlider(vm.cores || 2);
+      document.getElementById("vm-ram").value = vm.memoryMB || 2048;
+      onRAMSlider(vm.memoryMB || 2048);
+
+      document.getElementById("vm-create-disk").checked = !!vm.createDisk;
+      document.getElementById("vm-disk-size").value = vm.diskSizeGB || 20;
+      onDiskSizeSlider(vm.diskSizeGB || 20);
+      toggleDiskOptions();
+      onArchChange();
+
+      switchPage("new-vm");
+    }
+
+    async function loadAllVMs() {
+      try {
+        const res = await brisa.call.vms.list();
+        savedVMs = res.items || [];
+        vmStates = res.states || {};
+        renderVMsList();
+        updateLogSelect();
+      } catch (err) {
+        console.error("Erro ao carregar VMs:", err);
+      }
+    }
+
+    function renderVMsList() {
+      const countEl = document.getElementById("vms-count");
+      if (countEl) countEl.textContent = savedVMs.length;
+
+      const container = document.getElementById("vms-container");
+      if (!savedVMs.length) {
+        container.innerHTML = `
+          <div class="adw-empty-row">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.4;">
+              <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            <div>
+              <div style="font-weight: 600; font-size: 15px; margin-bottom: 4px; color: var(--window-fg-color);">Nenhuma Máquina Virtual configurada</div>
+              <div>Crie sua primeira máquina virtual com ISO, RAM e CPU personalizadas.</div>
+            </div>
+            <button class="gtk-btn suggested-action" style="margin-top: 8px;" onclick="switchPage('new-vm')">
+              Criar Nova Máquina
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = savedVMs.map(vm => {
+        const state = vmStates[vm.id] || { status: "stopped", pid: 0, uptimeSec: 0 };
+        const isRunning = state.status === "running";
+        const isError = state.status === "error";
+
+        let statusBadge = `<span class="gtk-pill stopped">Parada</span>`;
+        if (isRunning) {
+          statusBadge = `<span class="gtk-pill running"><span class="pulse-dot"></span> Executando (PID ${state.pid})</span>`;
+        } else if (isError) {
+          statusBadge = `<span class="gtk-pill error">Erro</span>`;
+        }
+
+        const ramGB = (vm.memoryMB / 1024).toFixed(1);
+        const isoDisplay = vm.isoPath ? vm.isoPath.split("/").pop() : "Nenhuma ISO (Live/PXE)";
+
+        return `
+          <div class="vm-card">
+            <div class="vm-card-header">
+              <div>
+                <span class="vm-card-title">${escapeHTML(vm.name)}</span>
+                <span style="font-size: 12px; color: var(--dim-label-color); margin-left: 8px;">${vm.createdAt || ""}</span>
+              </div>
+              <div>
+                ${statusBadge}
+              </div>
+            </div>
+
+            <div class="vm-card-details">
+              <span class="gtk-pill accent">${vm.arch}</span>
+              <span class="gtk-pill">${vm.cores} ${vm.cores === 1 ? "Core" : "Cores"}</span>
+              <span class="gtk-pill">${vm.memoryMB} MB (${ramGB} GB RAM)</span>
+              <span class="gtk-pill" title="${escapeHTML(vm.isoPath || '')}">💿 ${escapeHTML(isoDisplay)}</span>
+              ${vm.diskPath ? `<span class="gtk-pill">💽 ${escapeHTML(vm.diskPath.split("/").pop())}</span>` : ""}
+            </div>
+
+            <div class="vm-card-actions">
+              <div style="display: flex; gap: 8px;">
+                ${isRunning ? `
+                  <button class="gtk-btn destructive-action" onclick="stopVM('${vm.id}')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <rect x="6" y="6" width="12" height="12"/>
+                    </svg>
+                    Parar
+                  </button>
+                ` : `
+                  <button class="gtk-btn suggested-action" onclick="startSavedVM('${vm.id}')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    Iniciar
+                  </button>
+                `}
+                <button class="gtk-btn" title="Ver logs" onclick="viewVMLogs('${vm.id}')">
+                  Logs
+                </button>
+              </div>
+
+              <div style="display: flex; gap: 6px;">
+                <button class="gtk-btn flat" title="Editar máquina" onclick="editVM('${vm.id}')">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                  </svg>
+                </button>
+                <button class="gtk-btn flat destructive-action" title="Excluir máquina" onclick="deleteVM('${vm.id}', '${escapeHTML(vm.name)}')">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--destructive-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function viewVMLogs(id) {
+      selectedLogVM = id;
+      document.getElementById("log-vm-select").value = id;
+      renderTerminal();
+      switchPage("logs");
+    }
+
+    function updateLogSelect() {
+      const sel = document.getElementById("log-vm-select");
+      const current = sel.value;
+      sel.innerHTML = '<option value="">Selecione uma máquina...</option>' +
+        savedVMs.map(v => `<option value="${v.id}">${escapeHTML(v.name)}</option>`).join("");
+      if (current) sel.value = current;
+    }
+
+    function switchLogVM() {
+      selectedLogVM = document.getElementById("log-vm-select").value;
+      renderTerminal();
+    }
+
+    function renderTerminal() {
+      const term = document.getElementById("terminal-content");
+      if (!selectedLogVM) {
+        term.textContent = "[QEMU Brisa] Nenhuma máquina selecionada para visualização de logs.";
+        return;
+      }
+      const logs = vmLogs[selectedLogVM] || [];
+      if (!logs.length) {
+        term.textContent = `[QEMU Brisa] Aguardando saída do console para a máquina ${selectedLogVM}...`;
+        return;
+      }
+      term.textContent = logs.join("\n");
+      term.scrollTop = term.scrollHeight;
+    }
+
+    function clearCurrentLogs() {
+      if (selectedLogVM) {
+        vmLogs[selectedLogVM] = [];
+        renderTerminal();
+      }
+    }
+
+    function copyCurrentLogs() {
+      const term = document.getElementById("terminal-content");
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(term.textContent);
+        showToast("Logs copiados!");
+      }
+    }
+
+    async function openDisksFolder() {
+      if (systemInfo && systemInfo.disksDir && window.brisa && brisa.openExternal) {
+        await brisa.openExternal(systemInfo.disksDir);
+      }
+    }
+
+    async function initSystem() {
+      try {
+        const info = await brisa.call.system.info();
+        systemInfo = info;
+
+        // Populate host info labels
+        document.getElementById("host-arch-label").textContent = `${info.os} (${info.arch})`;
+        const ramGB = (info.hostMemoryMB / 1024).toFixed(0);
+        document.getElementById("host-ram-label").textContent = `${ramGB} GB RAM (${info.hostCpus} CPUs)`;
+
+        // Adjust CPU slider limits
+        const coresSlider = document.getElementById("vm-cores");
+        coresSlider.max = Math.max(info.hostCpus, 4);
+        document.getElementById("max-cores-label").textContent = `${coresSlider.max} Cores`;
+
+        // Adjust RAM slider limits
+        const ramSlider = document.getElementById("vm-ram");
+        ramSlider.max = Math.min(info.hostMemoryMB, 32768);
+        document.getElementById("max-ram-label").textContent = `${ramSlider.max} MB`;
+
+        // System Diagnostic page
+        document.getElementById("sys-qemu-version").textContent = info.qemuVersion || "Detectado";
+        document.getElementById("sys-arm-path").textContent = info.qemuArmPath || "Não instalado";
+        document.getElementById("sys-x86-path").textContent = info.qemuX86Path || "Não instalado";
+        document.getElementById("sys-img-path").textContent = info.qemuImgPath || "Não instalado";
+        document.getElementById("sys-edk2-path").textContent = info.edk2ArmPath || "Firmware padrão QEMU";
+        document.getElementById("sys-disks-dir").textContent = info.disksDir || "~/.qemu-brisa/disks";
+
+        // Default arch selection based on host
+        if (info.arch === "arm64") {
+          document.getElementById("vm-arch").value = "aarch64";
+        } else {
+          document.getElementById("vm-arch").value = "x86_64";
+        }
+        onArchChange();
+      } catch (err) {
+        console.error("Falha ao inicializar sistema:", err);
+      }
+
+      await loadAllVMs();
+    }
+
+    function escapeHTML(str) {
+      return String(str || "").replace(/[&<>"']/g, s => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[s]));
+    }
+
+    // SSE Event Listeners
+    if (window.brisa && brisa.on) {
+      brisa.on("vms:status", (state) => {
+        if (state && state.id) {
+          vmStates[state.id] = state;
+          renderVMsList();
+        }
+      });
+
+      brisa.on("vms:telemetry", (states) => {
+        if (states) {
+          vmStates = states;
+          renderVMsList();
+        }
+      });
+
+      brisa.on("vms:log", (data) => {
+        if (data && data.id) {
+          if (!vmLogs[data.id]) vmLogs[data.id] = [];
+          vmLogs[data.id].push(`[${data.time}] ${data.line}`);
+          if (vmLogs[data.id].length > 500) {
+            vmLogs[data.id].shift();
+          }
+          if (selectedLogVM === data.id) {
+            renderTerminal();
+          }
+        }
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", initSystem);
+  </script>
+</body>
+</html>
