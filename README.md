@@ -69,23 +69,8 @@ Para atualizar o Brisa diretamente para o último commit da branch `main` no Git
 ./update-brisa.sh
 ```
 
-Ou para alternar para a pasta local de desenvolvimento (`../brisa`):
-
-```bash
-./update-brisa.sh --local
-```
-
-Para depuração ou testes sem abrir janela gráfica:
-
-```bash
-BRISA_HEADLESS=1 ./qemu-brisa
-```
-
-(Acesse a URL impressa no terminal ou o inspetor em `/brisa/inspector`)
-
 ---
 
 ## 📄 Licença
 
 Este projeto está sob a licença [MIT](LICENSE). Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
