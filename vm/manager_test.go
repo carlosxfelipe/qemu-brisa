@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"os"
 	"strings"
 	"testing"
 )
@@ -57,5 +58,17 @@ func TestBuildCommandISODiskCorrection(t *testing.T) {
 	// Should map as CD-ROM boot
 	if !strings.Contains(cmdStr, "media=cdrom") {
 		t.Errorf("Expected ISO to be mapped as cdrom: %s", cmdStr)
+	}
+}
+
+func TestGetDiskSpaceGB(t *testing.T) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Skip("Cannot get home dir")
+	}
+	freeGB, totalGB := GetDiskSpaceGB(home)
+	t.Logf("Disk space at %s: %d GB free / %d GB total", home, freeGB, totalGB)
+	if totalGB <= 0 {
+		t.Errorf("Expected total disk space > 0, got %d", totalGB)
 	}
 }

@@ -300,6 +300,10 @@
           <span id="host-ram-label">8 GB</span>
         </div>
         <div class="footer-row">
+          <span>Disco Livre:</span>
+          <span id="host-disk-label">Calculando...</span>
+        </div>
+        <div class="footer-row">
           <span>QEMU:</span>
           <span id="qemu-status-pill" style="color: var(--success-color);">Detectado</span>
         </div>
@@ -496,13 +500,27 @@
                 </div>
               </div>
 
-              <div class="adw-row" id="disk-size-row">
-                <div class="adw-row-text">
-                  <div class="adw-row-title">Tamanho do Disco</div>
-                  <div class="adw-row-subtitle" id="disk-size-label">20 GB (alocação dinâmica QCOW2)</div>
+              <div class="adw-row" id="disk-size-row" style="flex-direction: column; align-items: stretch; gap: 8px; padding: 14px 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <div class="adw-row-title">Tamanho Máximo do Disco Virtual</div>
+                    <div class="adw-row-subtitle" id="disk-size-label">20 GB (alocação dinâmica QCOW2)</div>
+                  </div>
+                  <div style="text-align: right;">
+                    <b id="disk-badge" style="font-size: 13px; color: var(--window-fg-color);">20 GB</b>
+                    <div style="font-size: 11.5px; color: var(--dim-label-color);" id="disk-free-label">Calculando espaço livre...</div>
+                  </div>
                 </div>
-                <div class="adw-row-suffix" style="width: 200px;">
-                  <input type="range" id="vm-disk-size" min="5" max="120" step="5" value="20" oninput="onDiskSizeSlider(this.value)" />
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--dim-label-color); margin-top: 2px;">
+                  <span id="min-disk-label">1 GB</span>
+                  <span id="max-disk-label">100% Livre</span>
+                </div>
+                <input type="range" id="vm-disk-size" min="1" max="100" step="1" value="20" oninput="onDiskSizeSlider(this.value)" />
+                <div class="preset-chips" id="disk-preset-chips">
+                  <button type="button" class="chip-btn" data-val="10" onclick="setDiskPreset(10)">10 GB</button>
+                  <button type="button" class="chip-btn active" data-val="20" onclick="setDiskPreset(20)">20 GB</button>
+                  <button type="button" class="chip-btn" data-val="30" onclick="setDiskPreset(30)">30 GB</button>
+                  <button type="button" class="chip-btn" data-val="100" onclick="setDiskPreset(this.getAttribute('data-val'))">100% (Máx)</button>
                 </div>
               </div>
 
@@ -864,9 +882,44 @@
     }
 
     function onDiskSizeSlider(val) {
-      updateSliderProgress(document.getElementById("vm-disk-size"));
-      document.getElementById("disk-size-label").textContent = val + " GB (alocação dinâmica QCOW2)";
+      val = parseInt(val, 10) || 1;
+      const slider = document.getElementById("vm-disk-size");
+      updateSliderProgress(slider);
+
+      const freeGB = systemInfo && systemInfo.hostDiskFreeGB ? systemInfo.hostDiskFreeGB : 0;
+      const pct = freeGB > 0 ? Math.round((val / freeGB) * 100) : 0;
+
+      const badge = document.getElementById("disk-badge");
+      if (badge) {
+        badge.textContent = freeGB > 0 ? `${val} GB (${pct}%)` : `${val} GB`;
+      }
+
+      const label = document.getElementById("disk-size-label");
+      if (label) {
+        if (freeGB > 0 && val > freeGB) {
+          label.innerHTML = `<span style="color: var(--destructive-color);">⚠️ ${val} GB excede o espaço livre no host (${freeGB} GB)</span>`;
+        } else if (freeGB > 0) {
+          const remaining = Math.max(freeGB - val, 0);
+          label.textContent = `${val} GB (QCOW2 dinâmico • ${remaining} GB livres restantes no host)`;
+        } else {
+          label.textContent = val + " GB (alocação dinâmica QCOW2)";
+        }
+      }
+
+      // Update active state on preset chips
+      const chips = document.querySelectorAll("#disk-preset-chips .chip-btn");
+      chips.forEach(chip => {
+        const chipVal = parseInt(chip.getAttribute("data-val"), 10);
+        chip.classList.toggle("active", chipVal === val);
+      });
+
       updateCmdPreview();
+    }
+
+    function setDiskPreset(gb) {
+      gb = parseInt(gb, 10);
+      document.getElementById("vm-disk-size").value = gb;
+      onDiskSizeSlider(gb);
     }
 
     function toggleDiskOptions() {
@@ -1017,6 +1070,9 @@
       setRAMPreset(2048);
       document.getElementById("vm-cores").value = 2;
       onCoresSlider(2);
+      const defaultDisk = (systemInfo && systemInfo.hostDiskFreeGB) ? Math.min(20, systemInfo.hostDiskFreeGB) : 20;
+      document.getElementById("vm-disk-size").value = defaultDisk;
+      onDiskSizeSlider(defaultDisk);
       onArchChange();
       updateCmdPreview();
     }
@@ -1285,6 +1341,9 @@
         document.getElementById("host-arch-label").textContent = `${info.os} (${info.arch})`;
         const ramGB = (info.hostMemoryMB / 1024).toFixed(0);
         document.getElementById("host-ram-label").textContent = `${ramGB} GB RAM (${info.hostCpus} CPUs)`;
+        if (info.hostDiskFreeGB > 0) {
+          document.getElementById("host-disk-label").textContent = `${info.hostDiskFreeGB} GB livres`;
+        }
 
         // Adjust CPU slider limits
         const coresSlider = document.getElementById("vm-cores");
@@ -1296,9 +1355,75 @@
         ramSlider.max = Math.min(info.hostMemoryMB, 32768);
         document.getElementById("max-ram-label").textContent = `${ramSlider.max} MB`;
 
+        // Adjust Disk slider limits & presets
+        const diskSlider = document.getElementById("vm-disk-size");
+        if (info.hostDiskFreeGB > 0) {
+          const maxFree = info.hostDiskFreeGB;
+          diskSlider.min = 1;
+          diskSlider.step = 1;
+          diskSlider.max = maxFree;
+
+          const minLabel = document.getElementById("min-disk-label");
+          if (minLabel) minLabel.textContent = "1 GB";
+
+          const maxLabel = document.getElementById("max-disk-label");
+          if (maxLabel) maxLabel.textContent = `${maxFree} GB (100% Livre)`;
+
+          const freeLabel = document.getElementById("disk-free-label");
+          if (freeLabel) freeLabel.textContent = `Disponível no host: ${maxFree} GB livres`;
+
+          // Generate dynamic preset chips adapted to available disk space
+          const chipsContainer = document.getElementById("disk-preset-chips");
+          if (chipsContainer) {
+            let presets = [];
+            if (maxFree <= 15) {
+              presets = [
+                { label: "25%", gb: Math.max(Math.round(maxFree * 0.25), 1) },
+                { label: "50%", gb: Math.max(Math.round(maxFree * 0.5), 1) },
+                { label: "75%", gb: Math.max(Math.round(maxFree * 0.75), 1) },
+                { label: `100% (${maxFree} GB)`, gb: maxFree }
+              ];
+            } else {
+              const p1 = 10;
+              const p2 = Math.min(20, Math.floor(maxFree * 0.6));
+              const half = Math.round(maxFree * 0.5);
+              const p3 = (p2 === half || p1 === half) ? Math.round(maxFree * 0.75) : half;
+              const p4 = maxFree;
+
+              presets = [
+                { label: `${p1} GB`, gb: p1 },
+                { label: `${p2} GB`, gb: p2 },
+                { label: p3 === half ? `50% (${p3} GB)` : `75% (${p3} GB)`, gb: p3 },
+                { label: `Máx (${p4} GB)`, gb: p4 }
+              ];
+            }
+
+            // Deduplicate if any collision occurs
+            const unique = [];
+            const seen = new Set();
+            for (const p of presets) {
+              if (!seen.has(p.gb) && p.gb >= 1 && p.gb <= maxFree) {
+                seen.add(p.gb);
+                unique.push(p);
+              }
+            }
+
+            chipsContainer.innerHTML = unique.map(p => `
+              <button type="button" class="chip-btn ${parseInt(diskSlider.value, 10) === p.gb ? "active" : ""}" data-val="${p.gb}" onclick="setDiskPreset(${p.gb})">
+                ${p.label}
+              </button>
+            `).join("");
+          }
+
+          if (parseInt(diskSlider.value, 10) > diskSlider.max) {
+            diskSlider.value = diskSlider.max;
+          }
+        }
+
         updateSliderProgress(coresSlider);
         updateSliderProgress(ramSlider);
-        updateSliderProgress(document.getElementById("vm-disk-size"));
+        updateSliderProgress(diskSlider);
+        onDiskSizeSlider(diskSlider.value);
 
         // System Diagnostic page
         document.getElementById("sys-qemu-version").textContent = info.qemuVersion || "Detectado";
@@ -1306,7 +1431,10 @@
         document.getElementById("sys-x86-path").textContent = info.qemuX86Path || "Não instalado";
         document.getElementById("sys-img-path").textContent = info.qemuImgPath || "Não instalado";
         document.getElementById("sys-edk2-path").textContent = info.edk2ArmPath || "Firmware padrão QEMU";
-        document.getElementById("sys-disks-dir").textContent = info.disksDir || "~/.qemu-brisa/disks";
+        const diskDiagText = info.hostDiskFreeGB > 0
+          ? `${info.disksDir || "~/.qemu-brisa/disks"} (${info.hostDiskFreeGB} GB livres de ${info.hostDiskTotalGB} GB)`
+          : (info.disksDir || "~/.qemu-brisa/disks");
+        document.getElementById("sys-disks-dir").textContent = diskDiagText;
 
         // Default arch selection based on host
         if (info.arch === "arm64") {

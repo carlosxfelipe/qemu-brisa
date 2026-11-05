@@ -28,18 +28,20 @@ type VMState struct {
 
 // SystemInfo represents host system capabilities and QEMU detection.
 type SystemInfo struct {
-	OS           string   `json:"os"`
-	Arch         string   `json:"arch"`
-	HostCPUs     int      `json:"hostCpus"`
-	HostMemoryMB int      `json:"hostMemoryMB"`
-	QemuVersion  string   `json:"qemuVersion"`
-	QemuX86Path  string   `json:"qemuX86Path"`
-	QemuArmPath  string   `json:"qemuArmPath"`
-	QemuImgPath  string   `json:"qemuImgPath"`
-	Accelerators []string `json:"accelerators"`
-	Edk2ArmPath  string   `json:"edk2ArmPath"`
-	Edk2X86Path  string   `json:"edk2X86Path"`
-	DisksDir     string   `json:"disksDir"`
+	OS              string   `json:"os"`
+	Arch            string   `json:"arch"`
+	HostCPUs        int      `json:"hostCpus"`
+	HostMemoryMB    int      `json:"hostMemoryMB"`
+	HostDiskFreeGB  int      `json:"hostDiskFreeGB"`
+	HostDiskTotalGB int      `json:"hostDiskTotalGB"`
+	QemuVersion     string   `json:"qemuVersion"`
+	QemuX86Path     string   `json:"qemuX86Path"`
+	QemuArmPath     string   `json:"qemuArmPath"`
+	QemuImgPath     string   `json:"qemuImgPath"`
+	Accelerators    []string `json:"accelerators"`
+	Edk2ArmPath     string   `json:"edk2ArmPath"`
+	Edk2X86Path     string   `json:"edk2X86Path"`
+	DisksDir        string   `json:"disksDir"`
 }
 
 // Request / Response DTOs

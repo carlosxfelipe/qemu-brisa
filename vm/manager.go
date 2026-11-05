@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -98,6 +99,17 @@ func GetHostMemoryMB() int {
 	return 8192 // Default fallback
 }
 
+// GetDiskSpaceGB queries available and total disk space in GB for a directory.
+func GetDiskSpaceGB(path string) (freeGB int, totalGB int) {
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs(path, &stat); err != nil {
+		return 0, 0
+	}
+	freeBytes := uint64(stat.Bavail) * uint64(stat.Bsize)
+	totalBytes := uint64(stat.Blocks) * uint64(stat.Bsize)
+	return int(freeBytes / (1024 * 1024 * 1024)), int(totalBytes / (1024 * 1024 * 1024))
+}
+
 // GetSystemInfo detects host capabilities and QEMU setup.
 func (m *Manager) GetSystemInfo() SystemInfo {
 	qemuX86 := LocateBinary("qemu-system-x86_64")
@@ -127,19 +139,23 @@ func (m *Manager) GetSystemInfo() SystemInfo {
 		accels = append(accels, "kvm")
 	}
 
+	freeDiskGB, totalDiskGB := GetDiskSpaceGB(m.disksDir)
+
 	return SystemInfo{
-		OS:           runtime.GOOS,
-		Arch:         runtime.GOARCH,
-		HostCPUs:     runtime.NumCPU(),
-		HostMemoryMB: GetHostMemoryMB(),
-		QemuVersion:  version,
-		QemuX86Path:  qemuX86,
-		QemuArmPath:  qemuArm,
-		QemuImgPath:  qemuImg,
-		Accelerators: accels,
-		Edk2ArmPath:  LocateFirmware("edk2-aarch64-code.fd"),
-		Edk2X86Path:  LocateFirmware("edk2-x86_64-code.fd"),
-		DisksDir:     m.disksDir,
+		OS:              runtime.GOOS,
+		Arch:            runtime.GOARCH,
+		HostCPUs:        runtime.NumCPU(),
+		HostMemoryMB:    GetHostMemoryMB(),
+		HostDiskFreeGB:  freeDiskGB,
+		HostDiskTotalGB: totalDiskGB,
+		QemuVersion:     version,
+		QemuX86Path:     qemuX86,
+		QemuArmPath:     qemuArm,
+		QemuImgPath:     qemuImg,
+		Accelerators:    accels,
+		Edk2ArmPath:     LocateFirmware("edk2-aarch64-code.fd"),
+		Edk2X86Path:     LocateFirmware("edk2-x86_64-code.fd"),
+		DisksDir:        m.disksDir,
 	}
 }
 
