@@ -9,8 +9,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/carlosxfelipe/brisa"
 	"qemu-brisa/vm"
+
+	"github.com/carlosxfelipe/brisa"
 )
 
 //go:embed all:ui assets/icon.png
