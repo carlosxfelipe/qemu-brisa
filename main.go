@@ -57,6 +57,17 @@ func (s *SystemService) BrowseDisk() (BrowseResponse, error) {
 	return BrowseResponse{Path: selected}, nil
 }
 
+type OpenURLRequest struct {
+	URL string `json:"url"`
+}
+
+func (s *SystemService) OpenURL(req OpenURLRequest) (brisa.Map, error) {
+	if req.URL != "" {
+		_ = brisa.OpenExternal(req.URL)
+	}
+	return brisa.Map{"opened": true}, nil
+}
+
 func main() {
 	headless := os.Getenv("BRISA_HEADLESS") == "1"
 

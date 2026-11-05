@@ -6,9 +6,14 @@
 [![Powered by Brisa](https://img.shields.io/badge/powered%20by-Brisa-8A2BE2?style=flat-square)](https://github.com/carlosxfelipe/brisa)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 
-Interface desktop nativa, moderna e leve para gerenciar instâncias do **QEMU** no **macOS** e **Linux**, desenvolvida em **Go** com o [**Brisa**](https://github.com/carlosxfelipe/brisa) — micro-framework desktop zero-dependências também criado por mim.
+Aplicação desktop moderna e leve para gerenciar instâncias do **QEMU** no **macOS** e **Linux**, desenvolvida em **Go** com o [**Brisa**](https://github.com/carlosxfelipe/brisa) — micro-framework desktop zero-dependências também criado por mim.
 
-> O [**Brisa**](https://github.com/carlosxfelipe/brisa) permite construir aplicações desktop modernas combinando Go no backend com HTML/CSS/JS no frontend, com IPC fortemente tipado (padrão REPR), streaming de eventos via SSE, temas desktop nativos e empacotamento standalone sem dependências externas.
+> O [**Brisa**](https://github.com/carlosxfelipe/brisa) permite construir aplicações desktop combinando backend compilado em Go com interface em HTML/CSS/JS, IPC fortemente tipado (padrão REPR), streaming de eventos via SSE, temas integrados e empacotamento standalone sem dependências externas.
+
+<p align="center">
+  <img src="preview/dark.png" alt="Brisa Dark Mode" width="49%">
+  <img src="preview/light.png" alt="Brisa Light Mode" width="49%">
+</p>
 
 ---
 
