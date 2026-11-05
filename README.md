@@ -1,8 +1,28 @@
 # QEMU Brisa — Gerenciador de Máquinas Virtuais
 
-Interface desktop nativa, moderna e leve para gerenciar instâncias do **QEMU** no macOS (e Linux), desenvolvida em **Go** com o framework **Brisa**.
+![Platform: macOS | Linux](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-0078D7?style=flat-square)
+![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-000000?style=flat-square&logo=apple&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-x86__64%20%7C%20ARM64-FCC624?style=flat-square&logo=linux&logoColor=black)
+[![Powered by Brisa](https://img.shields.io/badge/powered%20by-Brisa-8A2BE2?style=flat-square)](https://github.com/carlosxfelipe/brisa)
+![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 
-Inspirada no modelo arquitetural de `brisa/examples/main.go`, com bindings REPR tipados, barramento de eventos SSE e armazenamento persistente seguro.
+Interface desktop nativa, moderna e leve para gerenciar instâncias do **QEMU** no **macOS** e **Linux**, desenvolvida em **Go** com o [**Brisa**](https://github.com/carlosxfelipe/brisa) — micro-framework desktop zero-dependências também criado por mim.
+
+> O [**Brisa**](https://github.com/carlosxfelipe/brisa) permite construir aplicações desktop modernas combinando Go no backend com HTML/CSS/JS no frontend, com IPC fortemente tipado (padrão REPR), streaming de eventos via SSE, temas desktop nativos e empacotamento standalone sem dependências externas.
+
+---
+
+## 💻 Plataformas Suportadas
+
+O **QEMU Brisa** foi arquitetado exclusivamente para sistemas operacionais baseados em Unix (**macOS** e **Linux**), integrando-se diretamente aos aceleradores nativos de virtualização do kernel de cada plataforma:
+
+| Sistema Operacional | Acelerador de Hardware                 | Display Gráfico                 | Arquiteturas Alvo                          |
+| :------------------ | :------------------------------------- | :------------------------------ | :----------------------------------------- |
+| **macOS**           | **HVF** (Apple Hypervisor.framework)   | Cocoa Nativo (`-display cocoa`) | `arm64` (Apple Silicon) e `x86_64` (Intel) |
+| **Linux**           | **KVM** (Kernel-based Virtual Machine) | X11 / Wayland                   | `x86_64` e `aarch64`                       |
+
+> [!NOTE]
+> **O Windows não é suportado.** A aplicação utiliza convenções POSIX, caminhos Unix (`~/.qemu-brisa/disks`), firmware EDK2 de distribuições Unix e aceleradores específicos do macOS (`hvf`) e do Linux (`kvm`).
 
 ---
 
@@ -26,11 +46,26 @@ Inspirada no modelo arquitetural de `brisa/examples/main.go`, com bindings REPR 
 
 ### 1. Pré-requisitos
 
-Certifique-se de ter o QEMU instalado via Homebrew:
+Certifique-se de ter o **QEMU** instalado no sistema:
 
-```bash
-brew install qemu
-```
+- **No macOS** (via Homebrew):
+
+  ```bash
+  brew install qemu
+  ```
+
+- **No Linux** (Ubuntu/Debian, Fedora ou Arch):
+
+  ```bash
+  # Ubuntu / Debian
+  sudo apt install qemu-system qemu-utils
+
+  # Fedora
+  sudo dnf install qemu-system-x86 qemu-system-aarch64 qemu-img
+
+  # Arch Linux
+  sudo pacman -S qemu-desktop
+  ```
 
 ### 2. Rodar a aplicação
 
@@ -67,6 +102,14 @@ Para atualizar o Brisa diretamente para o último commit da branch `main` no Git
 
 ```bash
 ./update-brisa.sh
+```
+
+### 5. Formatar o código
+
+Para formatar e manter todo o código Go do projeto devidamente padronizado:
+
+```bash
+go fmt ./...
 ```
 
 ---

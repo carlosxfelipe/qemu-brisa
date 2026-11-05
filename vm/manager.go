@@ -172,6 +172,17 @@ func (m *Manager) CreateDisk(name string, sizeGB int) (string, error) {
 
 // BuildCommand generates the exact executable path and arguments for a VM.
 func (m *Manager) BuildCommand(cfg VMConfig) (string, []string, error) {
+	// Auto-correct if an .iso was inadvertently entered as a hard disk
+	if cfg.ISOPath == "" && strings.HasSuffix(strings.ToLower(cfg.DiskPath), ".iso") {
+		cfg.ISOPath = cfg.DiskPath
+		cfg.DiskPath = ""
+	}
+
+	diskFormat := "qcow2"
+	if lower := strings.ToLower(cfg.DiskPath); strings.HasSuffix(lower, ".raw") || strings.HasSuffix(lower, ".img") || strings.HasSuffix(lower, ".iso") {
+		diskFormat = "raw"
+	}
+
 	var bin string
 	switch cfg.Arch {
 	case "aarch64":
@@ -203,13 +214,17 @@ func (m *Manager) BuildCommand(cfg VMConfig) (string, []string, error) {
 
 	isDarwinArm := runtime.GOOS == "darwin" && runtime.GOARCH == "arm64"
 	isDarwinX86 := runtime.GOOS == "darwin" && runtime.GOARCH == "amd64"
+	isLinuxArm := runtime.GOOS == "linux" && runtime.GOARCH == "arm64"
+	isLinuxX86 := runtime.GOOS == "linux" && runtime.GOARCH == "amd64"
 
 	if cfg.Arch == "aarch64" {
 		args = append(args, "-M", "virt,highmem=on")
 		if cfg.EnableAccel && isDarwinArm {
 			args = append(args, "-accel", "hvf", "-cpu", "host")
+		} else if cfg.EnableAccel && isLinuxArm {
+			args = append(args, "-accel", "kvm", "-cpu", "host")
 		} else {
-			args = append(args, "-accel", "tcg", "-cpu", "cortex-a72")
+			args = append(args, "-accel", "tcg,thread=multi,tb-size=512", "-cpu", "cortex-a72")
 		}
 
 		// UEFI firmware for ARM64 virt machine
@@ -219,14 +234,16 @@ func (m *Manager) BuildCommand(cfg VMConfig) (string, []string, error) {
 		}
 
 		// Display & Devices
-		args = append(args, "-display", "cocoa")
+		if runtime.GOOS == "darwin" {
+			args = append(args, "-display", "cocoa")
+		}
 		args = append(args, "-device", "virtio-gpu-pci")
 		args = append(args, "-device", "qemu-xhci", "-device", "usb-kbd", "-device", "usb-tablet")
 		args = append(args, "-netdev", "user,id=net0", "-device", "virtio-net-pci,netdev=net0")
 
 		// Storage
 		if cfg.DiskPath != "" {
-			args = append(args, "-drive", fmt.Sprintf("file=%s,format=qcow2,if=none,id=hd0", cfg.DiskPath))
+			args = append(args, "-drive", fmt.Sprintf("file=%s,format=%s,if=none,id=hd0", cfg.DiskPath, diskFormat))
 			args = append(args, "-device", "virtio-blk-pci,drive=hd0")
 		}
 		if cfg.ISOPath != "" {
@@ -239,19 +256,23 @@ func (m *Manager) BuildCommand(cfg VMConfig) (string, []string, error) {
 		args = append(args, "-M", "q35")
 		if cfg.EnableAccel && isDarwinX86 {
 			args = append(args, "-accel", "hvf", "-cpu", "host")
+		} else if cfg.EnableAccel && isLinuxX86 {
+			args = append(args, "-accel", "kvm", "-cpu", "host")
 		} else {
-			args = append(args, "-accel", "tcg", "-cpu", "max")
+			args = append(args, "-accel", "tcg,thread=multi,tb-size=512", "-cpu", "Nehalem")
 		}
 
 		// Display & Devices
-		args = append(args, "-display", "cocoa")
+		if runtime.GOOS == "darwin" {
+			args = append(args, "-display", "cocoa")
+		}
 		args = append(args, "-vga", "virtio")
 		args = append(args, "-usb", "-device", "usb-tablet")
 		args = append(args, "-netdev", "user,id=net0", "-device", "virtio-net-pci,netdev=net0")
 
 		// Storage
 		if cfg.DiskPath != "" {
-			args = append(args, "-drive", fmt.Sprintf("file=%s,format=qcow2,if=virtio", cfg.DiskPath))
+			args = append(args, "-drive", fmt.Sprintf("file=%s,format=%s,if=virtio", cfg.DiskPath, diskFormat))
 		}
 		if cfg.ISOPath != "" {
 			args = append(args, "-cdrom", cfg.ISOPath)
@@ -278,6 +299,12 @@ func (m *Manager) StartVM(cfg VMConfig) (*VMState, error) {
 		if p.Cmd != nil && p.Cmd.Process != nil {
 			return nil, fmt.Errorf("a máquina virtual %q já está em execução (PID %d)", cfg.Name, p.Cmd.Process.Pid)
 		}
+	}
+
+	// Auto-correct if an .iso was inadvertently passed as a hard disk
+	if cfg.ISOPath == "" && strings.HasSuffix(strings.ToLower(cfg.DiskPath), ".iso") {
+		cfg.ISOPath = cfg.DiskPath
+		cfg.DiskPath = ""
 	}
 
 	// Auto-create disk if requested and not yet existing
