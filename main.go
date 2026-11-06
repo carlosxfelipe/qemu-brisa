@@ -218,7 +218,7 @@ func main() {
 		}
 
 		_ = app.Notify(brisa.NotificationOptions{
-			Title: "QEMU Brisa",
+			Title: "Máquina Iniciada",
 			Body:  fmt.Sprintf("Máquina %q iniciada com sucesso (PID %d)", targetCfg.Name, state.PID),
 		})
 
@@ -232,7 +232,7 @@ func main() {
 		}
 
 		_ = app.Notify(brisa.NotificationOptions{
-			Title: "QEMU Brisa",
+			Title: "Máquina Parada",
 			Body:  "Máquina virtual parada com sucesso.",
 		})
 
