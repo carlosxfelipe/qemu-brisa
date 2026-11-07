@@ -49,6 +49,36 @@ func (m *Manager) DisksDir() string {
 	return m.disksDir
 }
 
+// DefaultDiskPath returns the standard QCOW2 disk path for a VM name.
+func (m *Manager) DefaultDiskPath(name string) string {
+	diskName := fmt.Sprintf("%s.qcow2", sanitizeFileName(name))
+	return filepath.Join(m.disksDir, diskName)
+}
+
+// EnsureDisk creates the automatic QCOW2 disk if requested and sets cfg.DiskPath.
+func (m *Manager) EnsureDisk(cfg *VMConfig) error {
+	if cfg == nil {
+		return nil
+	}
+	if cfg.ISOPath == "" && strings.HasSuffix(strings.ToLower(cfg.DiskPath), ".iso") {
+		cfg.ISOPath = cfg.DiskPath
+		cfg.DiskPath = ""
+	}
+	if cfg.CreateDisk && cfg.DiskPath == "" {
+		diskName := fmt.Sprintf("%s.qcow2", sanitizeFileName(cfg.Name))
+		size := cfg.DiskSizeGB
+		if size <= 0 {
+			size = 20
+		}
+		path, err := m.CreateDisk(diskName, size)
+		if err != nil {
+			return err
+		}
+		cfg.DiskPath = path
+	}
+	return nil
+}
+
 // LocateBinary looks for an executable in PATH or Homebrew directories.
 func LocateBinary(name string) string {
 	if p, err := exec.LookPath(name); err == nil {
@@ -194,6 +224,10 @@ func (m *Manager) BuildCommand(cfg VMConfig) (string, []string, error) {
 		cfg.DiskPath = ""
 	}
 
+	if cfg.CreateDisk && cfg.DiskPath == "" {
+		cfg.DiskPath = m.DefaultDiskPath(cfg.Name)
+	}
+
 	diskFormat := "qcow2"
 	if lower := strings.ToLower(cfg.DiskPath); strings.HasSuffix(lower, ".raw") || strings.HasSuffix(lower, ".img") || strings.HasSuffix(lower, ".iso") {
 		diskFormat = "raw"
@@ -317,23 +351,8 @@ func (m *Manager) StartVM(cfg VMConfig) (*VMState, error) {
 		}
 	}
 
-	// Auto-correct if an .iso was inadvertently passed as a hard disk
-	if cfg.ISOPath == "" && strings.HasSuffix(strings.ToLower(cfg.DiskPath), ".iso") {
-		cfg.ISOPath = cfg.DiskPath
-		cfg.DiskPath = ""
-	}
-
-	// Auto-create disk if requested and not yet existing
-	if cfg.CreateDisk && cfg.DiskPath == "" {
-		diskName := fmt.Sprintf("%s.qcow2", sanitizeFileName(cfg.Name))
-		size := cfg.DiskSizeGB
-		if size <= 0 {
-			size = 20
-		}
-		path, err := m.CreateDisk(diskName, size)
-		if err == nil {
-			cfg.DiskPath = path
-		}
+	if err := m.EnsureDisk(&cfg); err != nil {
+		return nil, err
 	}
 
 	bin, args, err := m.BuildCommand(cfg)

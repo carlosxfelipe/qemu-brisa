@@ -72,3 +72,28 @@ func TestGetDiskSpaceGB(t *testing.T) {
 		t.Errorf("Expected total disk space > 0, got %d", totalGB)
 	}
 }
+
+func TestBuildCommandAutoCreateDiskPreview(t *testing.T) {
+	mgr := NewManager(nil)
+	cfg := VMConfig{
+		Name:       "Ubuntu 24.04",
+		Arch:       "aarch64",
+		Cores:      2,
+		MemoryMB:   2048,
+		CreateDisk: true,
+		DiskSizeGB: 20,
+	}
+
+	bin, args, err := mgr.BuildCommand(cfg)
+	if err != nil {
+		t.Fatalf("BuildCommand failed: %v", err)
+	}
+
+	cmdStr := bin + " " + strings.Join(args, " ")
+	t.Logf("Generated command with auto disk: %s", cmdStr)
+
+	expectedDisk := mgr.DefaultDiskPath("Ubuntu 24.04")
+	if !strings.Contains(cmdStr, expectedDisk) {
+		t.Errorf("Expected command to include default disk path %q, got: %s", expectedDisk, cmdStr)
+	}
+}

@@ -131,6 +131,10 @@ func main() {
 		_, _ = ctx.Store().Get("vms", &list)
 
 		item := req.VM
+		if err := mgr.EnsureDisk(&item); err != nil {
+			return vm.VMConfig{}, err
+		}
+
 		if item.ID == "" {
 			item.ID = fmt.Sprintf("vm_%d", time.Now().UnixMilli())
 			item.CreatedAt = time.Now().Format("02/01/2006 15:04")
@@ -199,16 +203,24 @@ func main() {
 		} else {
 			var list []vm.VMConfig
 			_, _ = ctx.Store().Get("vms", &list)
-			found := false
-			for _, item := range list {
+			foundIdx := -1
+			for i, item := range list {
 				if item.ID == req.ID {
 					targetCfg = item
-					found = true
+					foundIdx = i
 					break
 				}
 			}
-			if !found {
+			if foundIdx == -1 {
 				return vm.VMState{}, fmt.Errorf("máquina virtual com ID %q não encontrada", req.ID)
+			}
+			if targetCfg.DiskPath == "" && targetCfg.CreateDisk {
+				if err := mgr.EnsureDisk(&targetCfg); err != nil {
+					return vm.VMState{}, err
+				}
+				list[foundIdx] = targetCfg
+				_ = ctx.Store().Set("vms", list)
+				ctx.Emit("vms:saved", targetCfg)
 			}
 		}
 

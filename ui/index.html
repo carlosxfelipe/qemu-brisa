@@ -1215,6 +1215,9 @@
 
         const ramGB = (vm.memoryMB / 1024).toFixed(1);
         const isoDisplay = vm.isoPath ? vm.isoPath.split("/").pop() : "Nenhuma ISO (Live/PXE)";
+        const diskBadge = vm.diskPath
+          ? `<span class="gtk-pill" title="${escapeHTML(vm.diskPath)}">💽 ${escapeHTML(vm.diskPath.split("/").pop())}${vm.createDisk && vm.diskSizeGB ? ` (${vm.diskSizeGB} GB)` : ""}</span>`
+          : (vm.createDisk ? `<span class="gtk-pill">💽 QCOW2 (${vm.diskSizeGB || 20} GB)</span>` : "");
 
         return `
           <div class="vm-card">
@@ -1233,7 +1236,7 @@
               <span class="gtk-pill">${vm.cores} ${vm.cores === 1 ? "Core" : "Cores"}</span>
               <span class="gtk-pill">${vm.memoryMB} MB (${ramGB} GB RAM)</span>
               <span class="gtk-pill" title="${escapeHTML(vm.isoPath || '')}">💿 ${escapeHTML(isoDisplay)}</span>
-              ${vm.diskPath ? `<span class="gtk-pill">💽 ${escapeHTML(vm.diskPath.split("/").pop())}</span>` : ""}
+              ${diskBadge}
             </div>
 
             <div class="vm-card-actions">
