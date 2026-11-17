@@ -2,6 +2,7 @@ package vm
 
 import (
 	"bufio"
+	"cmp"
 	"errors"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -147,17 +149,12 @@ func (m *Manager) GetSystemInfo() SystemInfo {
 	qemuImg := LocateBinary("qemu-img")
 
 	version := "Not found"
-	targetBin := qemuX86
-	if targetBin == "" {
-		targetBin = qemuArm
-	}
+	targetBin := cmp.Or(qemuX86, qemuArm)
 	if targetBin != "" {
 		out, err := exec.Command(targetBin, "--version").Output()
 		if err == nil {
-			lines := strings.Split(string(out), "\n")
-			if len(lines) > 0 {
-				version = strings.TrimSpace(lines[0])
-			}
+			firstLine, _, _ := strings.Cut(string(out), "\n")
+			version = strings.TrimSpace(firstLine)
 		}
 	}
 
@@ -452,9 +449,7 @@ func (m *Manager) GetLogs(id string) []string {
 	defer m.mu.RUnlock()
 
 	if p, ok := m.processes[id]; ok {
-		cp := make([]string, len(p.Logs))
-		copy(cp, p.Logs)
-		return cp
+		return slices.Clone(p.Logs)
 	}
 	return nil
 }

@@ -1,12 +1,14 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"embed"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"qemu-brisa/vm"
@@ -143,9 +145,7 @@ func main() {
 			updated := false
 			for i, cur := range list {
 				if cur.ID == item.ID {
-					if item.CreatedAt == "" {
-						item.CreatedAt = cur.CreatedAt
-					}
+					item.CreatedAt = cmp.Or(item.CreatedAt, cur.CreatedAt)
 					list[i] = item
 					updated = true
 					break
@@ -260,7 +260,7 @@ func main() {
 
 		cmdString := filepath.Base(bin)
 		for _, arg := range args {
-			if len(arg) > 0 && (arg[0] == '-' || !containsAny(arg, " \t\n\"'")) {
+			if len(arg) > 0 && (arg[0] == '-' || !strings.ContainsAny(arg, " \t\n\"'")) {
 				cmdString += " " + arg
 			} else {
 				cmdString += " \"" + arg + "\""
@@ -318,15 +318,4 @@ func main() {
 	})
 
 	log.Fatal(app.Run())
-}
-
-func containsAny(s, chars string) bool {
-	for i := 0; i < len(s); i++ {
-		for j := 0; j < len(chars); j++ {
-			if s[i] == chars[j] {
-				return true
-			}
-		}
-	}
-	return false
 }

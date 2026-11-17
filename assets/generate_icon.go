@@ -3,6 +3,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -18,7 +19,7 @@ type iconTarget struct {
 
 func main() {
 	baseDir := "."
-	if _, err := os.Stat("icon_source.svg"); os.IsNotExist(err) {
+	if _, err := os.Stat("icon_source.svg"); errors.Is(err, os.ErrNotExist) {
 		if _, file, _, ok := runtime.Caller(0); ok {
 			baseDir = filepath.Dir(file)
 		}
